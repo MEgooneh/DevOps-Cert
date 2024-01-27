@@ -1,0 +1,92 @@
+---
+- hosts: my_servers
+  become: yes
+  become_user: root
+  tasks:
+
+  ################################
+  # HARDENING SERVER 
+  ################################
+    - name: Open ports in iptables
+      shell:
+        cmd: "iptables -A INPUT -p tcp --dport {{ item }} -j ACCEPT"
+      with_items:
+        - 80
+        - 5000
+        - 9011
+
+    - name: Disable SSH password authentication
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: '^PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+
+  ################################
+  # Preparing server
+  ################################
+
+    - name: Cleaning
+      shell: |
+        apt-get purge -y docker-engine docker docker.io docker-ce docker-ce-cli docker-compose-plugin ;
+        apt-get autoremove -y --purge docker-engine docker docker.io docker-ce docker-compose-plugin ;
+        rm -rf /var/lib/docker /etc/docker ;
+        rm /etc/apparmor.d/docker ;
+        groupdel docker ;
+        rm -rf /var/run/docker.sock ;
+        rm -rf /etc/nginx/ ;
+        mkdir -p /etc/nginx/ssl/
+
+    - name: Download docker installation script
+      command: curl -fsSL https://get.docker.com -o install-docker.sh
+
+    - name: Install Docker
+      command: sh install-docker.sh
+  
+    - name: prepare Docker (adding mirror registry)
+      copy:
+        src: ../daemon.json
+        dest: /etc/docker/daemon.json
+    
+      
+    - name: Copy docker-compose.yml from local machine to server
+      copy:
+        src: ../docker-compose.yml  
+        dest: ./docker-compose.yml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Config Nginx
+      copy:
+        src: ../nginx.conf
+        dest: /etc/nginx/nginx.conf
+
+    - name: Config registry Nginx
+      copy:
+        src: ../registry_nginx.conf
+        dest: ./registry_nginx.conf
+    
+  ################################
+  # Starting server
+  ################################
+   
+    - name: Run docker compose
+      command: docker compose up -d
+
+  ################################
+  # backup setting
+  ################################
+    - name: Create Docker volumes backup script
+      copy:
+        src: ../docker_backup.sh
+        dest: "/etc/cron.weekly/docker_backup.sh"
+        mode: 0755
+
+
+    - name: Add cron job for Docker volumes backup
+      cron:
+        name: "Docker Volumes Backup"
+        minute: 0
+        hour: 0
+        weekday: 0
+        job: "/etc/cron.weekly/docker_backup.sh"

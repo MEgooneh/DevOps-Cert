@@ -1,0 +1,2 @@
+[my_servers]
+217.196.106.223 ansible_ssh_port=9011 ansible_ssh_user=root
