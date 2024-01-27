@@ -4,9 +4,9 @@ this repo is for my DevOps course in Fanaps/Arvan academy
 
 ## description
 
-there is ansible playbook "main.yml"
+there is an ansible playbook at "playbooks/main.yml"
 
-in that we do these steps :
+it does these tasks :
 
 1. hardening server with iptables. opening ports: 80->http , 5000:docker registry, 9011: ssh/ also disabling ssh access with password
 2. reintsall docker
