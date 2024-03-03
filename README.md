@@ -13,6 +13,3 @@ it does these tasks :
 3. transfering configurations
 4. run all 5 well-defined containers with docker compose
 5. transfer backup scripts and applying them
-
-
-you can access the wordpress site at : http://217.196.106.223/
